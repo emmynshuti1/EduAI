@@ -1,29 +1,38 @@
 {
-  "name": "server",
+  "name": "eduai-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "EduAI API server: AI tutoring, conversations, quizzes, notes and study materials",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@highlightjs/cdn-assets": "^11.11.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "dompurify": "^3.4.17",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.13.0",
+    "marked": "^18.1.2",
     "multer": "^2.3.0",
     "openai": "^7.10.0",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.23.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

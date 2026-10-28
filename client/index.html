@@ -7,12 +7,11 @@
     <meta name="description"
         content="EduAI is an intelligent learning companion that explains, quizzes, plans, and helps you master any subject." />
     <meta name="theme-color" content="#090b12" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%278%27 fill=%27%237362f2%27/%3E%3Cpath d=%27M14 3.5 16.6 11l7.9 3-7.9 3L14 24.5 11.4 17l-7.9-3 7.9-3L14 3.5Z%27 fill=%27white%27/%3E%3C/svg%3E" />
     <title>EduAI — Learn anything, deeply</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
-        rel="stylesheet" />
+    <link rel="stylesheet" href="/vendor/highlight.css" />
     <link rel="stylesheet" href="css/style.css" />
 </head>
 
@@ -76,18 +75,11 @@
                         </button>
                     </div>
 
-                    <div class="hero-proof">
-                        <div class="proof-avatars" aria-hidden="true">
-                            <span>AM</span>
-                            <span>JK</span>
-                            <span>SL</span>
-                            <span>+</span>
-                        </div>
-                        <div>
-                            <div class="proof-stars" aria-label="5 out of 5 stars">★★★★★</div>
-                            <p>Made for ambitious, curious learners</p>
-                        </div>
-                    </div>
+                    <ul class="hero-points" aria-label="What EduAI helps with">
+                        <li>Step-by-step explanations at your level</li>
+                        <li>Quizzes that are marked, with feedback on mistakes</li>
+                        <li>Summaries of your own notes, PDFs and documents</li>
+                    </ul>
                 </div>
 
                 <div class="hero-product" id="product">
@@ -171,14 +163,14 @@
                         </div>
                     </div>
 
-                    <div class="floating-insight floating-insight-left">
+                    <div class="floating-insight floating-insight-left" aria-hidden="true">
                         <span class="insight-icon">✓</span>
-                        <div><b>Concept mastered</b><small>Great progress today</small></div>
+                        <div><b>Quiz marked</b><small>4 of 5 correct</small></div>
                     </div>
 
-                    <div class="floating-insight floating-insight-right">
+                    <div class="floating-insight floating-insight-right" aria-hidden="true">
                         <span class="insight-icon">↗</span>
-                        <div><b>12 day streak</b><small>Keep the momentum</small></div>
+                        <div><b>Mistake explained</b><small>See where it went wrong</small></div>
                     </div>
                 </div>
             </section>
@@ -225,7 +217,7 @@
                             <h3>Practice until it sticks</h3>
                             <p>Generate quizzes, flashcards, and follow-up questions in seconds.</p>
                         </div>
-                        <div class="progress-ring"><strong>84%</strong><span>Mastery</span></div>
+                        <div class="progress-ring" aria-hidden="true"><strong>84%</strong><span>Quiz score</span></div>
                     </article>
 
                     <article class="bento-card bento-notes">
@@ -268,22 +260,22 @@
                     <ol class="experience-steps">
                         <li><span>01</span><div><b>Bring any question</b><small>Type it, paste notes, or add study
                                     material.</small></div></li>
-                        <li><span>02</span><div><b>Choose how you learn</b><small>Explain, summarize, quiz, or build
-                                    flashcards.</small></div></li>
+                        <li><span>02</span><div><b>Choose how you learn</b><small>Explanations, guided hints, practice,
+                                    or a marked quiz.</small></div></li>
                         <li><span>03</span><div><b>Keep making progress</b><small>Your learning history stays organized
                                     and ready.</small></div></li>
                     </ol>
                 </div>
 
                 <div class="experience-panel">
-                    <div class="focus-card">
-                        <div class="focus-top"><span>Today’s focus</span><b>72%</b></div>
+                    <div class="focus-card" aria-hidden="true">
+                        <div class="focus-top"><span>Latest quiz</span><b>72%</b></div>
                         <h3>Computer networking</h3>
                         <div class="focus-progress"><i></i></div>
                         <div class="focus-stats">
-                            <span><b>6</b><small>concepts</small></span>
+                            <span><b>6</b><small>notes</small></span>
                             <span><b>18</b><small>questions</small></span>
-                            <span><b>4</b><small>sessions</small></span>
+                            <span><b>4</b><small>quizzes</small></span>
                         </div>
                     </div>
                     <div class="quote-card">
@@ -385,9 +377,9 @@
                             <span class="forgot-btn" id="authPasswordHint">Secure sign in</span>
                         </div>
                         <div class="password-wrap">
-                            <input id="authPassword" type="password" autocomplete="current-password" minlength="6"
+                            <input id="authPassword" type="password" autocomplete="current-password"
                                 placeholder="Enter your password" required />
-                            <button id="passwordToggle" type="button" aria-label="Show password">
+                            <button id="passwordToggle" type="button" aria-label="Show password" aria-pressed="false">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                                     <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
                                     <circle cx="12" cy="12" r="2.7" />
@@ -396,10 +388,10 @@
                         </div>
                     </div>
 
-                    <label id="termsRow" class="terms-row hidden">
-                        <input type="checkbox" required />
-                        <span>I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</span>
-                    </label>
+                    <p id="termsRow" class="terms-row hidden">
+                        Your conversations, notes and study materials are private to your account. Messages are
+                        sent to the AI provider configured by this EduAI server to generate answers.
+                    </p>
 
                     <button class="auth-submit" type="submit" id="authSubmitButton">
                         Continue to EduAI
@@ -408,7 +400,7 @@
                     <div id="authError" class="auth-error" aria-live="polite"></div>
                 </form>
 
-                <div class="auth-divider"><span>Secure, private learning space</span></div>
+                <div class="auth-divider"><span>Private learning space</span></div>
 
                 <p class="auth-footer">
                     <span id="authSwitchPrompt">New to EduAI?</span>
@@ -419,9 +411,9 @@
     </div>
 
     <div class="app-container hidden" id="appContainer">
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar" aria-label="EduAI navigation">
             <div class="sidebar-brand-row">
-                <a class="wordmark app-wordmark" href="#" aria-label="EduAI">
+                <a class="wordmark app-wordmark" href="#tutor" aria-label="EduAI tutor">
                     <span class="brand-mark" aria-hidden="true">
                         <svg viewBox="0 0 28 28" fill="none">
                             <path d="M14 3.5 16.6 11l7.9 3-7.9 3L14 24.5 11.4 17l-7.9-3 7.9-3L14 3.5Z"
@@ -449,71 +441,57 @@
                 <kbd class="sidebar-copy">Ctrl N</kbd>
             </button>
 
+            <nav class="workspace-nav" aria-label="Study space">
+                <p class="menu-title sidebar-copy">STUDY SPACE</p>
+                <a class="nav-item" href="#tutor" data-view="tutor">
+                    <span class="tool-icon purple" aria-hidden="true">✦</span><span class="sidebar-copy">Tutor</span>
+                </a>
+                <a class="nav-item" href="#quizzes" data-view="quizzes">
+                    <span class="tool-icon blue" aria-hidden="true">?</span><span class="sidebar-copy">Quizzes</span>
+                </a>
+                <a class="nav-item" href="#notes" data-view="notes">
+                    <span class="tool-icon amber" aria-hidden="true">≡</span><span class="sidebar-copy">Notes</span>
+                </a>
+                <a class="nav-item" href="#materials" data-view="materials">
+                    <span class="tool-icon green" aria-hidden="true">◇</span><span class="sidebar-copy">Materials</span>
+                </a>
+                <a class="nav-item" href="#progress" data-view="progress">
+                    <span class="tool-icon rose" aria-hidden="true">↗</span><span class="sidebar-copy">Progress</span>
+                </a>
+            </nav>
+
             <div class="sidebar-search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <circle cx="11" cy="11" r="6.5" />
                     <path d="m16 16 4 4" />
                 </svg>
-                <input id="conversationSearch" type="search" placeholder="Search conversations" />
+                <input id="conversationSearch" type="search" placeholder="Search conversations"
+                    aria-label="Search conversations" />
             </div>
 
             <div class="sidebar-scroll">
                 <div class="conversation-section">
-                    <div class="conversation-label">RECENT</div>
-                    <div class="conversation-list" id="conversationList"></div>
-                </div>
-
-                <div class="sidebar-menu">
-                    <p class="menu-title">LEARNING TOOLS</p>
-                    <button class="tool-btn" type="button"
-                        data-prompt="Explain this topic step by step using a simple example:">
-                        <span class="tool-icon purple">✦</span><span>Explain a topic</span>
-                    </button>
-                    <button class="tool-btn" type="button" data-prompt="Create a short quiz to test me on:">
-                        <span class="tool-icon blue">?</span><span>Quiz me</span>
-                    </button>
-                    <button class="tool-btn" type="button" data-prompt="Summarize these notes into key ideas:">
-                        <span class="tool-icon amber">≡</span><span>Summarize notes</span>
-                    </button>
-                    <button class="tool-btn" type="button"
-                        data-prompt="Create effective flashcards with questions and answers for:">
-                        <span class="tool-icon green">◇</span><span>Build flashcards</span>
-                    </button>
-                </div>
-
-                <div class="upload-panel">
-                    <div class="upload-panel-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                            <path d="M12 15V4m0 0L8 8m4-4 4 4" />
-                            <path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" />
-                        </svg>
-                    </div>
-                    <div class="sidebar-copy">
-                        <b>Add study material</b>
-                        <span id="uploadedNotesMeta" class="uploaded-notes-meta">PDF, DOCX, TXT or MD</span>
-                    </div>
-                    <button id="uploadNotesBtn" class="upload-notes-btn" type="button" aria-label="Upload study material">
-                        Add
-                    </button>
-                    <input id="notesUploadInput" type="file" accept=".txt,.md,.pdf,.doc,.docx" hidden />
+                    <div class="conversation-label menu-title">CONVERSATIONS</div>
+                    <div class="conversation-list" id="conversationList" role="list"></div>
                 </div>
             </div>
 
             <div class="sidebar-footer">
                 <div class="sidebar-actions sidebar-copy">
                     <button id="exportChatBtn" class="sidebar-action-btn" type="button">Export chat</button>
-                    <span>·</span>
-                    <button id="restoreChatBtn" class="sidebar-action-btn" type="button">Import</button>
+                    <span aria-hidden="true">·</span>
+                    <button id="restoreChatBtn" class="sidebar-action-btn" type="button">Import chat</button>
                 </div>
-                <input id="restoreChatInput" type="file" accept="application/json" hidden />
+                <input id="restoreChatInput" type="file" accept="application/json,.json" hidden />
 
                 <div class="account-mini">
-                    <span id="accountInitial">E</span>
+                    <span id="accountInitial" aria-hidden="true">E</span>
                     <div class="sidebar-copy">
                         <b id="accountName">Your learning space</b>
-                        <small>EduAI Free</small>
+                        <small id="accountEmail"></small>
                     </div>
-                    <button id="logoutBtn" class="icon-button sidebar-copy" type="button" aria-label="Log out">
+                    <button id="logoutBtn" class="icon-button sidebar-copy" type="button" aria-label="Log out"
+                        title="Log out">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10" />
                             <path d="m14 8 4 4-4 4m4-4H9" />
@@ -523,9 +501,9 @@
             </div>
         </aside>
 
-        <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Close sidebar"></button>
+        <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Close menu"></button>
 
-        <main class="chat-container">
+        <main class="chat-container" id="mainPanel">
             <header class="chat-header">
                 <div class="header-left">
                     <button class="icon-button mobile-menu-btn" id="mobileMenuBtn" type="button"
@@ -539,74 +517,160 @@
                             <h2 id="chatTitle">New conversation</h2>
                             <span class="private-badge">Private</span>
                         </div>
-                        <p><span class="status-dot"></span>EduAI Tutor · Ready to help</p>
+                        <p id="headerStatus"><span class="status-dot" id="statusDot"></span><span
+                                id="headerStatusText">EduAI Tutor</span></p>
                     </div>
                 </div>
 
                 <div class="header-actions">
-                    <div class="header-mode" aria-label="Current tutor mode">
-                        <span class="mode-spark">✦</span>
-                        <span>Balanced</span>
-                    </div>
-                    <button class="icon-button header-icon" id="themeToggle" type="button" aria-label="Toggle theme">
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M20 15.2A8.5 8.5 0 1 1 8.8 4a7 7 0 0 0 11.2 11.2Z" />
-                        </svg>
+                    <button class="header-mode" id="tutorSettingsBtn" type="button" aria-haspopup="dialog"
+                        aria-expanded="false" aria-controls="tutorSettings">
+                        <span class="mode-spark" aria-hidden="true">✦</span>
+                        <span id="tutorSettingsLabel">High school · Explain</span>
+                        <span class="chevron" aria-hidden="true">▾</span>
                     </button>
+                    <button class="icon-button header-icon" id="themeToggle" type="button"
+                        aria-label="Toggle theme"></button>
                     <button class="icon-button header-icon" id="clearChatBtn" type="button"
-                        aria-label="Start new conversation">
+                        aria-label="New conversation" title="New conversation">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M5 5h9l5 5v9H5V5Z" />
                             <path d="M14 5v5h5M8 15h8M12 11v8" />
                         </svg>
                     </button>
-                    <div id="userBadge" class="user-badge hidden"></div>
+                    <div id="userBadge" class="user-badge hidden" aria-hidden="true"></div>
                 </div>
+
+                <section class="tutor-settings hidden" id="tutorSettings" role="dialog" aria-modal="false"
+                    aria-labelledby="tutorSettingsTitle">
+                    <div class="tutor-settings-head">
+                        <h3 id="tutorSettingsTitle">How should EduAI teach you?</h3>
+                        <p>Applies to this conversation and becomes your default for new ones.</p>
+                    </div>
+                    <fieldset class="settings-group">
+                        <legend>Your level</legend>
+                        <div class="pill-group" id="levelOptions"></div>
+                    </fieldset>
+                    <fieldset class="settings-group">
+                        <legend>Tutoring style</legend>
+                        <div class="mode-options" id="modeOptions"></div>
+                    </fieldset>
+                    <label class="settings-group">
+                        <span class="legend">Subject or course <small>(optional)</small></span>
+                        <input id="subjectInput" class="text-input" type="text" maxlength="80"
+                            placeholder="e.g. IB Chemistry, Intro to Python" />
+                    </label>
+                    <div class="tutor-settings-actions">
+                        <button type="button" class="btn btn-quiet" id="tutorSettingsCancel">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="tutorSettingsSave">Apply</button>
+                    </div>
+                </section>
             </header>
 
-            <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
-
-            <div class="chat-input-container">
-                <div class="composer-mode-row">
-                    <span><i></i> Tutor mode</span>
-                    <button type="button" data-prompt="Guide me with hints and questions instead of giving the answer directly.">
-                        Socratic learning
-                    </button>
+            <div class="app-banner hidden" id="aiBanner" role="status">
+                <span class="banner-icon" aria-hidden="true">!</span>
+                <div><b id="aiBannerTitle">AI tutor unavailable</b>
+                    <p id="aiBannerText"></p>
                 </div>
-                <form id="chatForm" class="chat-form">
-                    <textarea id="messageInput" rows="1" autocomplete="off"
-                        placeholder="Ask EduAI anything..."></textarea>
-
-                    <div class="composer-tools">
-                        <button type="button" id="composerAttach" class="composer-icon" aria-label="Attach study material">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <path
-                                    d="m8.5 12.5 5.9-5.9a3 3 0 0 1 4.2 4.2l-7.5 7.5a4.5 4.5 0 0 1-6.4-6.4l7.2-7.2" />
-                            </svg>
-                        </button>
-                        <span class="composer-hint">Add study material</span>
-                    </div>
-
-                    <div class="composer-actions">
-                        <span class="keyboard-hint">Enter to send</span>
-                        <button type="button" id="stopButton" class="stop-button" hidden aria-label="Stop generating">
-                            <span></span>
-                        </button>
-                        <button type="submit" id="sendButton" class="send-button" disabled aria-label="Send message">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 19V5m0 0-6 6m6-6 6 6" />
-                            </svg>
-                        </button>
-                    </div>
-                </form>
-
-                <p class="input-info">EduAI can make mistakes. Verify important information.</p>
+                <button type="button" class="btn btn-quiet btn-sm" id="aiBannerRetry">Check again</button>
             </div>
+
+            <div class="app-banner info hidden" id="legacyBanner" role="status">
+                <span class="banner-icon" aria-hidden="true">↥</span>
+                <div><b>Conversations found in this browser</b>
+                    <p id="legacyBannerText"></p>
+                </div>
+                <div class="banner-actions">
+                    <button type="button" class="btn btn-quiet btn-sm" id="legacyDismiss">Not now</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="legacyImport">Import</button>
+                </div>
+            </div>
+
+            <!-- Tutor -->
+            <section class="view view-tutor" id="view-tutor" data-view-panel="tutor">
+                <div class="chat-messages" id="chatMessages" aria-live="polite" aria-busy="false"></div>
+                <button type="button" class="jump-latest hidden" id="jumpLatest">↓ Latest</button>
+
+                <div class="chat-input-container">
+                    <div class="attached-row hidden" id="attachedRow" aria-label="Study material used in this conversation"></div>
+                    <div class="quick-actions" id="quickActions" aria-label="Quick actions"></div>
+                    <form id="chatForm" class="chat-form">
+                        <label for="messageInput" class="sr-only">Message EduAI</label>
+                        <textarea id="messageInput" rows="1" autocomplete="off" maxlength="20000"
+                            placeholder="Ask a question, paste a problem, or share your answer to check…"></textarea>
+
+                        <div class="composer-tools">
+                            <button type="button" id="composerAttach" class="composer-icon"
+                                aria-label="Add study material (PDF, DOCX, TXT, Markdown)" title="Add study material">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path
+                                        d="m8.5 12.5 5.9-5.9a3 3 0 0 1 4.2 4.2l-7.5 7.5a4.5 4.5 0 0 1-6.4-6.4l7.2-7.2" />
+                                </svg>
+                            </button>
+                            <span class="composer-hint" id="composerHint">PDF, DOCX, TXT or Markdown</span>
+                        </div>
+
+                        <div class="composer-actions">
+                            <span class="keyboard-hint">Enter to send · Shift+Enter for a new line</span>
+                            <button type="button" id="stopButton" class="stop-button" hidden
+                                aria-label="Stop generating" title="Stop generating">
+                                <span></span>
+                            </button>
+                            <button type="submit" id="sendButton" class="send-button" disabled
+                                aria-label="Send message">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 19V5m0 0-6 6m6-6 6 6" />
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                    <input id="notesUploadInput" type="file" hidden
+                        accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.html,.css,.js,.ts,.py,.java,.c,.cpp,.cs,.go,.rb,.php,.rs,.sql,.tex" />
+
+                    <p class="input-info">EduAI can make mistakes. Check important facts with your teacher or textbook.</p>
+                </div>
+            </section>
+
+            <!-- Quizzes -->
+            <section class="view workspace-view hidden" id="view-quizzes" data-view-panel="quizzes">
+                <div class="workspace-inner" id="quizzesRoot"></div>
+            </section>
+
+            <!-- Notes -->
+            <section class="view workspace-view hidden" id="view-notes" data-view-panel="notes">
+                <div class="workspace-inner" id="notesRoot"></div>
+            </section>
+
+            <!-- Materials -->
+            <section class="view workspace-view hidden" id="view-materials" data-view-panel="materials">
+                <div class="workspace-inner" id="materialsRoot"></div>
+            </section>
+
+            <!-- Progress -->
+            <section class="view workspace-view hidden" id="view-progress" data-view-panel="progress">
+                <div class="workspace-inner" id="progressRoot"></div>
+            </section>
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="js/app.js"></script>
+    <dialog class="app-dialog" id="appDialog" aria-labelledby="appDialogTitle">
+        <form method="dialog" class="app-dialog-body" id="appDialogForm">
+            <h3 id="appDialogTitle"></h3>
+            <p id="appDialogMessage"></p>
+            <input id="appDialogInput" class="text-input hidden" type="text" maxlength="120" />
+            <div class="app-dialog-actions">
+                <button type="button" class="btn btn-quiet" id="appDialogCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="appDialogConfirm">OK</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div id="toastRegion" class="toast-region" role="status" aria-live="polite"></div>
+
+    <script src="/vendor/marked.js"></script>
+    <script src="/vendor/purify.js"></script>
+    <script src="/vendor/highlight.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

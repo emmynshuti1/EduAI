@@ -1,238 +1,163 @@
 const express = require("express");
-const { query } = require("../config/db");
+const { getStore } = require("../store");
 const { authenticateToken } = require("../middleware/auth");
-const {
-    listConversationsForUser,
-    createMemoryConversation,
-    getMemoryConversation,
-    updateMemoryConversationTitle,
-    addMemoryMessage,
-    deleteMemoryConversation,
-} = require("../utils/fallbackStore");
+const { sanitizeSettings, titleFromMessage } = require("../services/tutor");
 
 const router = express.Router();
+router.use(authenticateToken);
 
-function useInMemoryStore() {
-    return !process.env.DATABASE_URL && !process.env.POSTGRES_URL;
+const MAX_TITLE = 120;
+const MAX_IMPORT_MESSAGES = 500;
+const MAX_MESSAGE_LENGTH = 100000;
+
+function cleanTitle(value) {
+    return String(value || "").replace(/\s+/g, " ").trim().slice(0, MAX_TITLE);
 }
 
-function normalizeConversation(row) {
-    return {
-        id: row.id,
-        title: row.title,
-        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-        updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now(),
-        messages: [],
-    };
-}
-
-router.get("/", authenticateToken, async (req, res, next) => {
+router.get("/", async (req, res, next) => {
     try {
-        if (useInMemoryStore()) {
-            const conversations = listConversationsForUser(req.user.id);
-            return res.json({ success: true, conversations });
-        }
-
-        const result = await query(
-            `SELECT * FROM conversations WHERE user_id = $1 ORDER BY updated_at DESC, created_at DESC`,
-            [req.user.id]
-        );
-
-        const conversations = await Promise.all(
-            result.rows.map(async (row) => {
-                const messagesResult = await query(
-                    `SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC`,
-                    [row.id]
-                );
-
-                return {
-                    ...normalizeConversation(row),
-                    messages: messagesResult.rows.map((message) => ({
-                        id: message.id,
-                        role: message.role,
-                        content: message.content,
-                        createdAt: message.created_at ? new Date(message.created_at).getTime() : Date.now(),
-                    })),
-                };
-            })
-        );
-
+        const conversations = await getStore().listConversations(req.user.id);
         res.json({ success: true, conversations });
     } catch (error) {
         next(error);
     }
 });
 
-router.post("/", authenticateToken, async (req, res, next) => {
+router.post("/", async (req, res, next) => {
     try {
-        const { title = "New chat" } = req.body || {};
-
-        if (useInMemoryStore()) {
-            const conversation = createMemoryConversation(req.user.id, title || "New chat");
-            return res.status(201).json({ success: true, conversation });
-        }
-
-        const result = await query(
-            `INSERT INTO conversations (user_id, title, updated_at)
-             VALUES ($1, $2, NOW())
-             RETURNING *`,
-            [req.user.id, title || "New chat"]
-        );
-
-        res.status(201).json({
-            success: true,
-            conversation: normalizeConversation(result.rows[0]),
+        const { title, settings } = req.body || {};
+        const conversation = await getStore().createConversation(req.user.id, {
+            title: cleanTitle(title) || "New conversation",
+            settings: sanitizeSettings(settings),
         });
+        res.status(201).json({ success: true, conversation });
     } catch (error) {
         next(error);
     }
 });
 
-router.get("/:id", authenticateToken, async (req, res, next) => {
+/*
+ * Imports conversations exported from EduAI, including the ones the previous version
+ * kept only in browser localStorage. Each one is validated and stored for this user.
+ */
+router.post("/import", async (req, res, next) => {
     try {
-        if (useInMemoryStore()) {
-            const conversation = getMemoryConversation(req.user.id, req.params.id);
-            if (!conversation) {
-                return res.status(404).json({ success: false, error: "Conversation not found." });
-            }
-
-            return res.json({ success: true, conversation });
+        const items = Array.isArray(req.body?.conversations) ? req.body.conversations.slice(0, 200) : null;
+        if (!items) {
+            return res.status(400).json({ success: false, error: "Expected a list of conversations to import." });
         }
 
-        const conversationResult = await query(
-            `SELECT * FROM conversations WHERE id = $1 AND user_id = $2`,
-            [req.params.id, req.user.id]
-        );
+        const store = getStore();
+        const imported = [];
+        let skipped = 0;
 
-        if (!conversationResult.rows[0]) {
-            return res.status(404).json({ success: false, error: "Conversation not found." });
-        }
-
-        const messagesResult = await query(
-            `SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC`,
-            [req.params.id]
-        );
-
-        res.json({
-            success: true,
-            conversation: {
-                ...normalizeConversation(conversationResult.rows[0]),
-                messages: messagesResult.rows.map((message) => ({
-                    id: message.id,
+        for (const item of items) {
+            const messages = (Array.isArray(item?.messages) ? item.messages : [])
+                .filter((message) => ["user", "assistant"].includes(message?.role) && typeof message.content === "string" && message.content.trim())
+                .slice(0, MAX_IMPORT_MESSAGES)
+                .map((message, index) => ({
                     role: message.role,
-                    content: message.content,
-                    createdAt: message.created_at ? new Date(message.created_at).getTime() : Date.now(),
-                })),
-            },
-        });
+                    content: message.content.slice(0, MAX_MESSAGE_LENGTH),
+                    createdAt: Number.isFinite(Number(message.createdAt)) ? Number(message.createdAt) : Date.now() + index,
+                }));
+
+            if (!messages.length) {
+                skipped += 1;
+                continue;
+            }
+
+            const createdAt = Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : messages[0].createdAt;
+            const updatedAt = Number.isFinite(Number(item.updatedAt)) ? Number(item.updatedAt) : messages[messages.length - 1].createdAt;
+            const title = cleanTitle(item.title);
+
+            imported.push(await store.importConversation(req.user.id, {
+                title: title && title !== "New chat" ? title : titleFromMessage(messages.find((message) => message.role === "user")?.content),
+                settings: sanitizeSettings(item.settings),
+                createdAt,
+                updatedAt,
+                messages,
+            }));
+        }
+
+        res.status(201).json({ success: true, imported, skipped });
     } catch (error) {
         next(error);
     }
 });
 
-router.patch("/:id/title", authenticateToken, async (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
     try {
-        const { title } = req.body || {};
-        if (!title || !String(title).trim()) {
-            return res.status(400).json({ success: false, error: "Title is required." });
-        }
-
-        if (useInMemoryStore()) {
-            const updated = updateMemoryConversationTitle(req.user.id, req.params.id, String(title).trim());
-            if (!updated) {
-                return res.status(404).json({ success: false, error: "Conversation not found." });
-            }
-            return res.json({ success: true, conversation: updated });
-        }
-
-        const result = await query(
-            `UPDATE conversations
-             SET title = $1, updated_at = NOW()
-             WHERE id = $2 AND user_id = $3
-             RETURNING *`,
-            [String(title).trim(), req.params.id, req.user.id]
-        );
-
-        if (!result.rows[0]) {
+        const conversation = await getStore().getConversation(req.user.id, req.params.id);
+        if (!conversation) {
             return res.status(404).json({ success: false, error: "Conversation not found." });
         }
-
-        res.json({ success: true, conversation: normalizeConversation(result.rows[0]) });
+        res.json({ success: true, conversation });
     } catch (error) {
         next(error);
     }
 });
 
-router.post("/:id/messages", authenticateToken, async (req, res, next) => {
+router.patch("/:id", async (req, res, next) => {
+    try {
+        const { title, settings } = req.body || {};
+        const update = {};
+
+        if (title !== undefined) {
+            update.title = cleanTitle(title);
+            if (!update.title) return res.status(400).json({ success: false, error: "Title cannot be empty." });
+        }
+        if (settings !== undefined) update.settings = sanitizeSettings(settings);
+
+        const conversation = await getStore().updateConversation(req.user.id, req.params.id, update);
+        if (!conversation) {
+            return res.status(404).json({ success: false, error: "Conversation not found." });
+        }
+        res.json({ success: true, conversation });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/* Kept for compatibility with the original API. */
+router.patch("/:id/title", async (req, res, next) => {
+    try {
+        const title = cleanTitle(req.body?.title);
+        if (!title) return res.status(400).json({ success: false, error: "Title is required." });
+
+        const conversation = await getStore().updateConversation(req.user.id, req.params.id, { title });
+        if (!conversation) return res.status(404).json({ success: false, error: "Conversation not found." });
+        res.json({ success: true, conversation });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/* Kept for compatibility with the original API. */
+router.post("/:id/messages", async (req, res, next) => {
     try {
         const { role, content } = req.body || {};
-        if (!role || !content || !String(content).trim()) {
-            return res.status(400).json({ success: false, error: "Message content is required." });
+        if (!["user", "assistant"].includes(role) || typeof content !== "string" || !content.trim()) {
+            return res.status(400).json({ success: false, error: "A role (user or assistant) and message content are required." });
         }
 
-        if (useInMemoryStore()) {
-            const message = addMemoryMessage(req.user.id, req.params.id, role, String(content));
-            if (!message) {
-                return res.status(404).json({ success: false, error: "Conversation not found." });
-            }
-            return res.status(201).json({ success: true, message });
-        }
+        const store = getStore();
+        const conversation = await store.getConversation(req.user.id, req.params.id);
+        if (!conversation) return res.status(404).json({ success: false, error: "Conversation not found." });
 
-        const conversationCheck = await query(
-            `SELECT id FROM conversations WHERE id = $1 AND user_id = $2`,
-            [req.params.id, req.user.id]
-        );
-
-        if (!conversationCheck.rows[0]) {
-            return res.status(404).json({ success: false, error: "Conversation not found." });
-        }
-
-        const result = await query(
-            `INSERT INTO messages (conversation_id, role, content)
-             VALUES ($1, $2, $3)
-             RETURNING *`,
-            [req.params.id, role, String(content)]
-        );
-
-        await query(
-            `UPDATE conversations SET updated_at = NOW() WHERE id = $1`,
-            [req.params.id]
-        );
-
-        res.status(201).json({
-            success: true,
-            message: {
-                id: result.rows[0].id,
-                role: result.rows[0].role,
-                content: result.rows[0].content,
-                createdAt: result.rows[0].created_at ? new Date(result.rows[0].created_at).getTime() : Date.now(),
-            },
-        });
+        const message = await store.addMessage(conversation.id, { role, content: content.slice(0, MAX_MESSAGE_LENGTH) });
+        res.status(201).json({ success: true, message });
     } catch (error) {
         next(error);
     }
 });
 
-router.delete("/:id", authenticateToken, async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
     try {
-        if (useInMemoryStore()) {
-            const deleted = deleteMemoryConversation(req.user.id, req.params.id);
-            if (!deleted) {
-                return res.status(404).json({ success: false, error: "Conversation not found." });
-            }
-            return res.json({ success: true, deletedConversationId: req.params.id });
-        }
-
-        const result = await query(
-            `DELETE FROM conversations WHERE id = $1 AND user_id = $2 RETURNING id`,
-            [req.params.id, req.user.id]
-        );
-
-        if (!result.rows[0]) {
+        const deleted = await getStore().deleteConversation(req.user.id, req.params.id);
+        if (!deleted) {
             return res.status(404).json({ success: false, error: "Conversation not found." });
         }
-
-        res.json({ success: true, deletedConversationId: result.rows[0].id });
+        res.json({ success: true, deletedConversationId: req.params.id });
     } catch (error) {
         next(error);
     }

@@ -1,5 +1,9 @@
 const { query } = require("../config/db");
 
+/*
+ * Idempotent, additive schema setup. Existing tables and rows are never dropped;
+ * new columns are added with IF NOT EXISTS so older databases upgrade in place.
+ */
 async function initializeDatabase() {
     try {
         await query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
@@ -25,6 +29,7 @@ async function initializeDatabase() {
                 updated_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        await query(`ALTER TABLE conversations ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}'::jsonb;`);
 
         await query(`
             CREATE TABLE IF NOT EXISTS messages (
@@ -35,6 +40,8 @@ async function initializeDatabase() {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        await query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS meta JSONB DEFAULT '{}'::jsonb;`);
+        await query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS seq BIGSERIAL;`);
 
         await query(`
             CREATE TABLE IF NOT EXISTS uploaded_files (
@@ -48,6 +55,9 @@ async function initializeDatabase() {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        await query(`ALTER TABLE uploaded_files ADD COLUMN IF NOT EXISTS content TEXT;`);
+        await query(`ALTER TABLE uploaded_files ADD COLUMN IF NOT EXISTS char_count INTEGER DEFAULT 0;`);
+        await query(`ALTER TABLE uploaded_files ADD COLUMN IF NOT EXISTS truncated BOOLEAN DEFAULT FALSE;`);
 
         await query(`
             CREATE TABLE IF NOT EXISTS study_sessions (
@@ -62,15 +72,50 @@ async function initializeDatabase() {
         `);
 
         await query(`
+            CREATE TABLE IF NOT EXISTS study_notes (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                kind VARCHAR(30) DEFAULT 'note',
+                source_conversation_id UUID REFERENCES conversations(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+
+        await query(`
+            CREATE TABLE IF NOT EXISTS quizzes (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                topic VARCHAR(255),
+                title VARCHAR(255),
+                level VARCHAR(30),
+                source_label VARCHAR(255),
+                questions JSONB NOT NULL,
+                responses JSONB,
+                results JSONB,
+                score NUMERIC(6, 2),
+                total INTEGER,
+                status VARCHAR(20) DEFAULT 'in_progress',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                completed_at TIMESTAMPTZ
+            );
+        `);
+
+        await query(`
             CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
             CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_conversation_order ON messages(conversation_id, created_at, seq);
             CREATE INDEX IF NOT EXISTS idx_uploaded_files_user_id ON uploaded_files(user_id);
             CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id ON study_sessions(user_id);
+            CREATE INDEX IF NOT EXISTS idx_study_notes_user_id ON study_notes(user_id);
+            CREATE INDEX IF NOT EXISTS idx_quizzes_user_id ON quizzes(user_id);
         `);
 
         console.log("Database tables initialized successfully.");
     } catch (error) {
-        console.error("Database initialization failed:", error);
+        console.error("Database initialization failed:", error.message);
         throw error;
     }
 }

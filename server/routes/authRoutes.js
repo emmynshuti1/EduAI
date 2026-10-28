@@ -1,97 +1,56 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
-const { query } = require("../config/db");
-const { authenticateToken } = require("../middleware/auth");
-const {
-    findMemoryUserByEmail,
-    createMemoryUser,
-    getMemoryUserById,
-    toPublicUser,
-} = require("../utils/fallbackStore");
+const { getStore } = require("../store");
+const { authenticateToken, signToken } = require("../middleware/auth");
 
 const router = express.Router();
 
-function useInMemoryStore() {
-    return !process.env.DATABASE_URL && !process.env.POSTGRES_URL;
+function toPublicUser(user) {
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role || "student",
+        createdAt: user.createdAt,
+    };
 }
 
-function signToken(user) {
-    return jwt.sign(
-        {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-        },
-        process.env.JWT_SECRET || "dev-secret-change-me",
-        { expiresIn: "7d" }
-    );
+function firstValidationError(req) {
+    const errors = validationResult(req);
+    return errors.isEmpty() ? null : errors.array()[0].msg;
 }
 
 router.post(
     "/register",
     [
-        body("name").trim().notEmpty().withMessage("Name is required."),
-        body("email").isEmail().withMessage("A valid email is required."),
-        body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters."),
+        body("name").isString().trim().isLength({ min: 1, max: 80 }).withMessage("Please enter your name (up to 80 characters)."),
+        body("email").isString().trim().isEmail().isLength({ max: 255 }).withMessage("Please enter a valid email address."),
+        body("password").isString().isLength({ min: 8, max: 200 }).withMessage("Password must be at least 8 characters."),
     ],
     async (req, res, next) => {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ success: false, errors: errors.array() });
+            const validationError = firstValidationError(req);
+            if (validationError) {
+                return res.status(400).json({ success: false, error: validationError });
             }
 
-            const { name, email, password } = req.body;
-            const normalizedEmail = email.trim().toLowerCase();
+            const store = getStore();
+            const name = req.body.name.trim();
+            const email = req.body.email.trim().toLowerCase();
 
-            if (useInMemoryStore()) {
-                const existing = findMemoryUserByEmail(normalizedEmail);
-                if (existing) {
-                    return res.status(409).json({ success: false, error: "An account with this email already exists." });
-                }
-
-                const passwordHash = await bcrypt.hash(password, 10);
-                const user = createMemoryUser({
-                    name,
-                    email: normalizedEmail,
-                    passwordHash,
-                });
-
-                const token = signToken(user);
-                return res.status(201).json({
-                    success: true,
-                    token,
-                    user: toPublicUser(user),
-                });
+            if (await store.findUserByEmail(email)) {
+                return res.status(409).json({ success: false, error: "An account with this email already exists. Try logging in." });
             }
 
-            const existing = await query("SELECT id FROM users WHERE email = $1", [normalizedEmail]);
-            if (existing.rows.length) {
-                return res.status(409).json({ success: false, error: "An account with this email already exists." });
-            }
+            const passwordHash = await bcrypt.hash(req.body.password, 10);
+            const user = await store.createUser({ name, email, passwordHash });
 
-            const passwordHash = await bcrypt.hash(password, 10);
-            const result = await query(
-                "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, role, created_at",
-                [name.trim(), normalizedEmail, passwordHash]
-            );
-
-            const user = result.rows[0];
-            const token = signToken(user);
-
-            return res.status(201).json({
-                success: true,
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                },
-            });
+            return res.status(201).json({ success: true, token: signToken(user), user: toPublicUser(user) });
         } catch (error) {
+            if (error.code === "23505") {
+                return res.status(409).json({ success: false, error: "An account with this email already exists. Try logging in." });
+            }
             next(error);
         }
     }
@@ -100,61 +59,24 @@ router.post(
 router.post(
     "/login",
     [
-        body("email").isEmail().withMessage("A valid email is required."),
-        body("password").notEmpty().withMessage("Password is required."),
+        body("email").isString().trim().isEmail().withMessage("Please enter a valid email address."),
+        body("password").isString().notEmpty().isLength({ max: 200 }).withMessage("Please enter your password."),
     ],
     async (req, res, next) => {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ success: false, errors: errors.array() });
+            const validationError = firstValidationError(req);
+            if (validationError) {
+                return res.status(400).json({ success: false, error: validationError });
             }
 
-            const { email, password } = req.body;
-            const normalizedEmail = email.trim().toLowerCase();
+            const user = await getStore().findUserByEmail(req.body.email.trim().toLowerCase());
+            const valid = user ? await bcrypt.compare(req.body.password, user.passwordHash) : false;
 
-            if (useInMemoryStore()) {
-                const user = findMemoryUserByEmail(normalizedEmail);
-                if (!user) {
-                    return res.status(401).json({ success: false, error: "Invalid credentials." });
-                }
-
-                const valid = await bcrypt.compare(password, user.password_hash);
-                if (!valid) {
-                    return res.status(401).json({ success: false, error: "Invalid credentials." });
-                }
-
-                const token = signToken(user);
-                return res.json({
-                    success: true,
-                    token,
-                    user: toPublicUser(user),
-                });
-            }
-
-            const result = await query("SELECT * FROM users WHERE email = $1", [normalizedEmail]);
-            const user = result.rows[0];
-
-            if (!user) {
-                return res.status(401).json({ success: false, error: "Invalid credentials." });
-            }
-
-            const valid = await bcrypt.compare(password, user.password_hash);
             if (!valid) {
-                return res.status(401).json({ success: false, error: "Invalid credentials." });
+                return res.status(401).json({ success: false, error: "Incorrect email or password." });
             }
 
-            const token = signToken(user);
-            return res.json({
-                success: true,
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                },
-            });
+            return res.json({ success: true, token: signToken(user), user: toPublicUser(user) });
         } catch (error) {
             next(error);
         }
@@ -163,21 +85,12 @@ router.post(
 
 router.get("/me", authenticateToken, async (req, res, next) => {
     try {
-        if (useInMemoryStore()) {
-            const user = getMemoryUserById(req.user.id);
-            if (!user) {
-                return res.status(404).json({ success: false, error: "User not found." });
-            }
-
-            return res.json({ success: true, user: toPublicUser(user) });
+        const user = await getStore().getUserById(req.user.id);
+        if (!user) {
+            return res.status(401).json({ success: false, code: "auth_expired", error: "Your account could not be found. Please log in again." });
         }
 
-        const result = await query("SELECT id, name, email, role, created_at FROM users WHERE id = $1", [req.user.id]);
-        if (!result.rows[0]) {
-            return res.status(404).json({ success: false, error: "User not found." });
-        }
-
-        return res.json({ success: true, user: result.rows[0] });
+        return res.json({ success: true, user: toPublicUser(user) });
     } catch (error) {
         next(error);
     }
